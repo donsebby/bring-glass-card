@@ -12,7 +12,7 @@
  * MIT licensed.
  */
 
-const CARD_VERSION = '1.0.0';
+const CARD_VERSION = '1.0.1';
 
 // eslint-disable-next-line no-console
 console.info(
@@ -337,30 +337,40 @@ class BringGlassCard extends HTMLElement {
   }
 
   set hass(hass) {
+    const first = !this._hass;
     this._hass = hass;
     if (!this._config) return;
-    // Refetch when a configured list's state object changed - the todo
-    // entity's state is its open-item count, so any add/complete/remove
-    // (including ones made in another app) lands here. The very first hass
-    // assignment counts on purpose: setConfig runs before it, so the fetch
-    // there is a no-op and without this pass the list would stay empty until
-    // the next state change or poll.
+    // IMPORTANT: do NOT render on every hass assignment. Home Assistant sets
+    // `hass` on every state change anywhere in the house - easily once per
+    // second - and a full innerHTML rebuild on each tick tears down and
+    // recreates every tile including its <ha-icon>. That starves the main
+    // thread and can take the WebView down on mobile.
+    //
+    // Only two things need to reach the DOM:
+    //   1. the very first hass, so the card paints its loading placeholder
+    //   2. a change to one of the configured lists - the todo entity's state
+    //      is its open-item count, so any add/complete/remove (including ones
+    //      made in another app) shows up in this signature. _fetchAll()
+    //      renders once the new items have arrived.
+    // Everything else is just a newer hass reference we keep around.
     const sig = this._config.lists
       .map((l) => {
         const st = hass.states[l.entity];
         return st ? `${l.entity}:${st.state}:${st.last_changed}` : `${l.entity}:-`;
       })
       .join('|');
-    if (sig !== this._sig) {
-      this._sig = sig;
-      this._fetchAll();
-    }
-    this._render();
+    const changed = sig !== this._sig;
+    if (changed) this._sig = sig;
+    if (first) this._render();
+    if (changed) this._fetchAll();
   }
 
   connectedCallback() {
     // Fallback poll: description-only edits do not change the entity state,
     // so a slow tick keeps a wall tablet in sync without hammering the API.
+    // Clear first - a card can be reconnected without disconnectedCallback
+    // having run, and stacked intervals would multiply the WebSocket calls.
+    clearInterval(this._poll);
     this._poll = setInterval(() => this._fetchAll(), (this._config?.refresh_seconds || 120) * 1000);
   }
 
@@ -398,7 +408,13 @@ class BringGlassCard extends HTMLElement {
   // Data
   // ------------------------------------------------------------------
 
-  _entity(i) { return this._config.lists[i === undefined ? this._active : i].entity; }
+  // Clamp: a config edit can shrink `lists` while a later tab is selected.
+  _list(i) {
+    const lists = this._config.lists;
+    return lists[Math.min(i === undefined ? this._active : i, lists.length - 1)] || lists[0];
+  }
+
+  _entity(i) { return this._list(i).entity; }
 
   async _fetchAll() {
     if (!this._hass || !this._config) return;
@@ -581,7 +597,7 @@ class BringGlassCard extends HTMLElement {
   _renderList() {
     if (!this._config || !this._cardEl) return;
     const cfg = this._config;
-    const list = cfg.lists[this._active];
+    const list = this._list();
     const all = this._items[list.entity] || [];
     // Compare the query normalized, so "kase" also matches "Kaese".
     const q = norm(this._q);
@@ -616,7 +632,7 @@ class BringGlassCard extends HTMLElement {
   _render() {
     if (!this._hass || !this._config || !this._cardEl) return;
     const cfg = this._config;
-    const list = cfg.lists[this._active];
+    const list = this._list();
     const stateObj = this._hass.states[list.entity];
     // While the field has focus, never rebuild the shell - the <input> and
     // with it the keyboard focus would be lost, whether that is triggered by
@@ -663,7 +679,7 @@ class BringGlassCard extends HTMLElement {
     const m = this._meta(item);
     const tinted = this._config.tinted !== false;
     const chips = this._config.qty_chips || DEFAULT_CHIPS;
-    const listName = this._config.lists[this._active].name || this._entity();
+    const listName = this._list().name || this._entity();
     this._veilHost.innerHTML = `<div class="veil"><div class="sheet">
       <div class="sheet-head">
         <div class="box sheet-box${tinted ? ' tinted' : ''}" style="--c:${m.color}"><ha-icon icon="${esc(m.icon)}"></ha-icon></div>
