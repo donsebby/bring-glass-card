@@ -6,6 +6,8 @@ Tap a tile to check an item off. Long-press it for quantity and details. Type in
 
 Part of the Liquid Glass card family, alongside [liquid-glass-tile-card](https://github.com/donsebby/liquid-glass-tile-card) and [liquid-lens-navbar-card](https://github.com/donsebby/liquid-lens-navbar-card).
 
+![demo](asset/bring-glass-card.png)
+
 ---
 
 ## Features
