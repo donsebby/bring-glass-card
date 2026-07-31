@@ -1,0 +1,6 @@
+{
+  "name": "Bring Glass Card",
+  "render_readme": true,
+  "filename": "bring-glass-card.js",
+  "homeassistant": "2024.4.0"
+}
