@@ -102,7 +102,8 @@ icons:
 
 ### Translation
 
-Every visible string can be overridden. `{n}` and `{list}` are placeholders. A complete German set:
+Every visible string can be overridden. `{n}` and `{list}` are placeholders.
+`pcs` is the unit appended when an item is added as `3x bread`. A complete German set:
 
 ```yaml
 labels:
@@ -125,6 +126,7 @@ labels:
   sheet_placeholder: z. B. 2 Liter
   delete: Löschen
   close: Fertig
+  pcs: Stück
 ```
 
 ## How the icons are picked
