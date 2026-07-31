@@ -12,7 +12,7 @@
  * MIT licensed.
  */
 
-const CARD_VERSION = '1.0.1';
+const CARD_VERSION = '1.0.2';
 
 // eslint-disable-next-line no-console
 console.info(
@@ -185,6 +185,7 @@ const LABELS = {
   sheet_label: 'Quantity / note',
   sheet_placeholder: 'e.g. 2 litres',
   delete: 'Delete',
+  pcs: 'pcs',
   close: 'Done',
 };
 
@@ -376,7 +377,7 @@ class BringGlassCard extends HTMLElement {
 
   disconnectedCallback() {
     clearInterval(this._poll);
-    clearTimeout(this._t);
+    clearTimeout(this._pressTimer);
   }
 
   getCardSize() { return 6; }
@@ -388,6 +389,8 @@ class BringGlassCard extends HTMLElement {
   static getConfigElement() { return document.createElement('bring-glass-card-editor'); }
 
   // Label lookup with {placeholder} substitution.
+  // NOTE: never store anything on `this._t` - an instance property would
+  // shadow this prototype method and every label lookup would throw.
   _t(key, vars) {
     let s = this._l[key] || '';
     if (vars) for (const k of Object.keys(vars)) s = s.split(`{${k}}`).join(vars[k]);
@@ -534,19 +537,19 @@ class BringGlassCard extends HTMLElement {
       const tile = e.target.closest('[data-uid]');
       if (!tile) return;
       this._long = false;
-      clearTimeout(this._t);
+      clearTimeout(this._pressTimer);
       const uid = tile.dataset.uid;
-      this._t = setTimeout(() => { this._long = true; this._haptic('medium'); this._sheet = uid; this._renderSheet(); }, 420);
+      this._pressTimer = setTimeout(() => { this._long = true; this._haptic('medium'); this._sheet = uid; this._renderSheet(); }, 420);
     });
     this.shadowRoot.addEventListener('pointerup', (e) => {
       const tile = e.target.closest('[data-uid]');
-      clearTimeout(this._t);
+      clearTimeout(this._pressTimer);
       if (!tile || this._long) return;
       this._haptic('light');
       this._call('update_item', { item: tile.dataset.uid, status: tile.dataset.done === '1' ? 'needs_action' : 'completed' });
     });
-    this.shadowRoot.addEventListener('pointercancel', () => clearTimeout(this._t));
-    this.shadowRoot.addEventListener('pointerleave', () => clearTimeout(this._t), true);
+    this.shadowRoot.addEventListener('pointercancel', () => clearTimeout(this._pressTimer));
+    this.shadowRoot.addEventListener('pointerleave', () => clearTimeout(this._pressTimer), true);
   }
 
   _applyLayout() {
@@ -718,7 +721,8 @@ class BringGlassCard extends HTMLElement {
     this._q = '';
     // "2 l milk" / "3x bread" -> quantity + name, like the Bring app does.
     const m = ADD_RE.exec(raw);
-    const qty = m ? m[1].replace(/\s*x$/i, ' pcs').trim() : '';
+    // "3x" -> "3 <pcs label>", so the unit follows the card's language.
+    const qty = m ? m[1].replace(/\s*x$/i, ' ' + this._t('pcs')).trim() : '';
     const name = m ? m[2] : raw;
     this._haptic('light');
     // If the list already knows the item (completed ones included), revive
