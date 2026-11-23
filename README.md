@@ -20,7 +20,9 @@ Part of the Liquid Glass card family, alongside [liquid-glass-tile-card](https:/
 - **Long-press sheet** for quantity, quick-pick chips and deleting an item
 - **Theme-aware** — follows `--primary-text-color` and `--card-background-color`, so it works on light and dark themes
 - **`frame: false`** for cards that already sit inside a glass container (Bubble Card popups and similar)
-- **Fully translatable** via the `labels:` option
+- **Categories** — open items are grouped into 12 sections in supermarket order (fruit & veg, bakery, dairy, …); sections collapse with a tap and remember that per device
+- **Learns your categories** — pick a category in the long-press sheet to override the automatic one; the choice is stored in a Home Assistant todo list, so it applies on every device
+- **German and English built in** (follows the Home Assistant language), every text can still be overridden via `labels:`
 
 ## Installation
 
@@ -79,8 +81,11 @@ lists:
 | `refresh_seconds` | number | `120` | Fallback poll interval. Description-only edits do not change the entity state, so this keeps a wall tablet in sync. |
 | `default_icon` | string | `mdi:basket-outline` | Icon for items that match no rule. |
 | `icons` | map | — | Custom keyword → icon mapping, see below. |
-| `qty_chips` | list | `1 pc, 2 pcs, 500 g, 1 kg, 1 l, Organic` | Quick-pick chips in the detail sheet. |
-| `labels` | map | English | Override any visible string, see below. |
+| `qty_chips` | list | `1 pc, 2 pcs, 500 g, 1 kg, 1 l, Organic` (German: `1 Stk, 2 Stk, …, Bio`) | Quick-pick chips in the detail sheet. |
+| `group_by_category` | bool | `true` | Group open items into category sections. `false` shows one flat grid. |
+| `overrides_entity` | string | `todo.bring_glass_card_kategorien` | A todo list (e.g. a *Local to-do* list) that stores manual category choices: item summary = item name, description = category id. Leave it out if you don't need manual overrides. |
+| `default_group` | string | `sonstiges` | Category for items that match no rule. |
+| `labels` | map | HA language | Override any visible string, see below. |
 
 ### Per list
 
@@ -104,8 +109,10 @@ icons:
 
 ### Translation
 
-Every visible string can be overridden. `{n}` and `{list}` are placeholders.
-`pcs` is the unit appended when an item is added as `3x bread`. A complete German set:
+German and English are built in and follow the Home Assistant language. Every
+visible string can still be overridden. `{n}` and `{list}` are placeholders.
+`pcs` is the unit appended when an item is added as `3x bread`. Example (the
+built-in German set, for reference):
 
 ```yaml
 labels:
@@ -145,6 +152,13 @@ Matching runs against a normalized name: lower case, `ß` folded to `ss`, diacri
 - A todo entity's state is its open-item count. Changes made elsewhere (the Bring app, another dashboard) therefore show up automatically; edits that only touch a description do not change the state and are picked up by the fallback poll.
 - Items are compared by name, not by id, when deduplicating on add. `Cola` and `Cola Zero` are correctly treated as different items.
 - The tile grid uses `align-items: start` on purpose — with `stretch`, WebKit derives the tile width from the stretched row height and the grid stops short of the right edge.
+
+## Changelog
+
+### 1.2.0
+- Fixed: since 1.1.0 the card showed no texts (title, counter, hint, sheet labels), no quick-pick chips and no glass background unless every label was configured by hand. Built-in texts, chips and the card frame are back.
+- German and English texts built in, following the Home Assistant language (`labels:` still overrides). Category names are translated too.
+- Documents the category features from 1.1.0: `group_by_category`, `overrides_entity`, `default_group`.
 
 ## License
 

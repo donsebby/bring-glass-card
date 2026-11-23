@@ -12,7 +12,7 @@
  * MIT licensed.
  */
 
-const CARD_VERSION = "1.1.0";
+const CARD_VERSION = "1.2.0";
 const DEFAULT_OVERRIDES_ENTITY = "todo.bring_glass_card_kategorien";
 const COLLAPSE_KEY_PREFIX = "bgc-collapsed:";
 
@@ -158,8 +158,64 @@ const norm = (e) =>
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
 
-const LABELS = {};
-const DEFAULT_CHIPS = [];
+// UI texts, picked by Home Assistant's language (German for "de", English
+// otherwise). Any key can be overridden per card via `labels:`.
+const LABELS_EN = {
+  title: "Shopping list",
+  add: "Add item",
+  open: "{n} open",
+  updated_now: "updated just now",
+  updated_min: "updated {n} min ago",
+  updated_hour: "updated {n} h ago",
+  updated_day: "updated {n} d ago",
+  empty_title: "All done",
+  empty_text: "Nothing left on this list. Need something? Just type it above.",
+  search_title: "No matches",
+  search_text: "Press Enter or + to add it as a new item.",
+  loading: `Loading list ${ELL}`,
+  done_title: "Recently done",
+  hint: `Tap to check off ${MID} long-press for details & quantity`,
+  sheet_on: "on {list}",
+  sheet_label: "Quantity / note",
+  sheet_placeholder: "e.g. 2 litres",
+  category: "Category",
+  category_auto: "Automatic",
+  delete: "Delete",
+  pcs: "pcs",
+  close: "Done",
+};
+const LABELS_DE = {
+  title: "Einkaufsliste",
+  add: "Artikel hinzuf\u00fcgen",
+  open: "{n} offen",
+  updated_now: "gerade aktualisiert",
+  updated_min: "aktualisiert vor {n} Min",
+  updated_hour: "aktualisiert vor {n} Std",
+  updated_day: "aktualisiert vor {n} Tagen",
+  empty_title: "Alles erledigt",
+  empty_text: "Nichts mehr auf der Liste. Fehlt etwas? Einfach oben eintippen.",
+  search_title: "Nichts gefunden",
+  search_text: "Enter oder + f\u00fcgt es als neuen Artikel hinzu.",
+  loading: `Liste wird geladen ${ELL}`,
+  done_title: "Zuletzt erledigt",
+  hint: `Tippen zum Abhaken ${MID} lange dr\u00fccken f\u00fcr Menge & Details`,
+  sheet_on: "auf {list}",
+  sheet_label: "Menge / Notiz",
+  sheet_placeholder: "z. B. 2 Liter",
+  category: "Kategorie",
+  category_auto: "Automatisch",
+  delete: "L\u00f6schen",
+  pcs: "Stk",
+  close: "Fertig",
+};
+const DEFAULT_CHIPS_EN = ["1 pc", "2 pcs", "500 g", "1 kg", "1 l", "Organic"];
+const DEFAULT_CHIPS_DE = ["1 Stk", "2 Stk", "500 g", "1 kg", "1 l", "Bio"];
+// English category names; the German ones live in GROUPS.
+const GROUP_NAMES_EN = {
+  gemuese: "Fruit & vegetables", brot: "Bread & bakery", milch: "Dairy & eggs", fleisch: "Meat, sausage & fish",
+  tiefkuehl: "Sweets & frozen", getraenke: "Drinks", vorrat: "Pantry & spices", grill: "BBQ",
+  drogerie: "Toiletries", haushalt: "Household & cleaning", tier: "Pets", sonstiges: "Other",
+};
 
 const LAYOUTS = {
   kacheln: { col: "122px", gap: "12px", dir: "column", pad: "15px 10px", minH: "134px", box: "68px", glyph: "36px", name: "13.5px", qty: "11.5px", ta: "center", text: "24px" },
@@ -169,6 +225,7 @@ const LAYOUTS = {
 
 const STYLE = `
 :host{display:block;font-family:var(--paper-font-body1_-_font-family,Roboto,Helvetica,Arial,sans-serif);--ink:var(--primary-text-color,#fff);--txt:var(--primary-text-color,rgba(255,255,255,0.95));--txt2:var(--secondary-text-color,rgba(255,255,255,0.55));--l7:color-mix(in srgb,var(--ink) 7%,transparent);--l12:color-mix(in srgb,var(--ink) 12%,transparent);--l13:color-mix(in srgb,var(--ink) 13%,transparent);--l26:color-mix(in srgb,var(--ink) 26%,rgba(255,255,255,0.5));--gbg:linear-gradient(155deg,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0.22) 45%,rgba(255,255,255,0.4) 100%);--gsh:inset 0 1px 1px rgba(255,255,255,0.28),inset 2px 0 4px rgba(80,200,255,0.28),inset -2px 0 4px rgba(255,90,190,0.25)}
+.card{box-sizing:border-box;background:color-mix(in oklch,var(--card-background-color,#17181f) var(--bg-pct,70%),transparent);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid var(--l12);border-radius:22px;padding:18px;box-shadow:0 20px 40px -20px rgba(0,0,0,0.35),inset 0 1px 0 var(--l12)}
 .card.bare{background:none;backdrop-filter:none;-webkit-backdrop-filter:none;border:none;border-radius:0;padding:0;box-shadow:none}
 .head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .head-l{flex:1 1 auto;min-width:0}
@@ -256,7 +313,7 @@ class BringGlassCard extends HTMLElement {
       if (!l.entity || !l.entity.startsWith("todo.")) throw new Error("bgc: todo.* required");
     });
     this._config = { ...config, lists };
-    this._l = { ...LABELS, ...(config.labels || {}) };
+    this._l = { ...(config.labels || {}) };
     this._metaCache = {};
     this._active = 0;
     this._items = {};
@@ -334,8 +391,18 @@ class BringGlassCard extends HTMLElement {
     return 6;
   }
 
+  _de() {
+    const h = this._hass;
+    return String((h && ((h.locale && h.locale.language) || h.language)) || "en").toLowerCase().startsWith("de");
+  }
+
+  _groupName(id) {
+    const meta = GROUP_META[id] || GROUP_META[DEFAULT_GROUP];
+    return this._de() ? meta.name : GROUP_NAMES_EN[id] || meta.name;
+  }
+
   _t(key, vars) {
-    let s = this._l[key] || "";
+    let s = this._l[key] != null ? this._l[key] : (this._de() ? LABELS_DE : LABELS_EN)[key] || "";
     if (vars) for (const k of Object.keys(vars)) s = s.split(`{${k}}`).join(vars[k]);
     return s;
   }
@@ -580,7 +647,7 @@ class BringGlassCard extends HTMLElement {
       <div class="catsec">
         <div class="cathead" data-cat-toggle="${esc(id)}">
           <ha-icon icon="${meta.icon}"></ha-icon>
-          <span class="catname">${esc(meta.name)}</span>
+          <span class="catname">${esc(this._groupName(id))}</span>
           <span class="catcount">${items.length}</span>
           <ha-icon class="catchev" icon="mdi:chevron-${collapsed ? "right" : "down"}"></ha-icon>
         </div>
@@ -695,7 +762,7 @@ class BringGlassCard extends HTMLElement {
     const meta = this._meta(item);
     const override = this._overrides && this._overrides[norm(item.summary)];
     const tinted = this._config.tinted !== false;
-    const chips = this._config.qty_chips || DEFAULT_CHIPS;
+    const chips = this._config.qty_chips || (this._de() ? DEFAULT_CHIPS_DE : DEFAULT_CHIPS_EN);
     const listName = this._list().name || this._entity();
     this._veilHost.innerHTML = `
       <div class="veil">
@@ -710,10 +777,10 @@ class BringGlassCard extends HTMLElement {
           <div class="label">${esc(this._t("sheet_label"))}</div>
           <input data-qty type="text" placeholder="${esc(this._t("sheet_placeholder"))}" value="${esc(item.description || "")}">
           <div class="chips">${chips.map((c) => `<div class="chip" data-chip="${esc(c)}">${esc(c)}</div>`).join("")}</div>
-          <div class="label">Kategorie</div>
+          <div class="label">${esc(this._t("category"))}</div>
           <div class="chips">
-            <div class="chip cat${override ? "" : " active"}" data-cat="_auto">Automatisch</div>
-            ${GROUPS.map((g) => `<div class="chip cat${meta.group === g[0] ? " active" : ""}" data-cat="${g[0]}">${esc(g[1])}</div>`).join("")}
+            <div class="chip cat${override ? "" : " active"}" data-cat="_auto">${esc(this._t("category_auto"))}</div>
+            ${GROUPS.map((g) => `<div class="chip cat${meta.group === g[0] ? " active" : ""}" data-cat="${g[0]}">${esc(this._groupName(g[0]))}</div>`).join("")}
           </div>
           <div class="sheet-actions">
             <div class="btn-del" data-sheet-del><ha-icon icon="mdi:trash-can-outline"></ha-icon>${esc(this._t("delete"))}</div>
@@ -779,7 +846,7 @@ class BringGlassCard extends HTMLElement {
     input.value = "";
     this._q = "";
     const m = ADD_RE.exec(raw);
-    const qty = m ? m[1].replace(/\s*x$/i, " pcs").trim() : "";
+    const qty = m ? m[1].replace(/\s*x$/i, " " + this._t("pcs")).trim() : "";
     const name = m ? m[2] : raw;
     this._haptic("light");
     const key = norm(name);
