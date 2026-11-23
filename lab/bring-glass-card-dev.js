@@ -373,6 +373,19 @@ const emptyHtml = (icon, title, sub, extraClass) => `
   </div>
 `;
 
+// Style from the theme: `--lg-look` (solid | glass, quotes tolerated) decides
+// for all Liquid Glass cards; `look:` in the card config overrides it.
+const themeLook = (el) => {
+  let v = "";
+  try {
+    v = getComputedStyle(el).getPropertyValue("--lg-look") || "";
+  } catch (err) {
+    /* not rendered yet */
+  }
+  v = v.trim().replace(/^["']|["']$/g, "").trim().toLowerCase();
+  return v === "solid" || v === "glass" ? v : "";
+};
+
 class BringGlassCard extends HTMLElement {
   setConfig(config) {
     const lists = config.lists || (config.entity ? [{ entity: config.entity }] : null);
@@ -393,7 +406,9 @@ class BringGlassCard extends HTMLElement {
     this._overrides = {};
     this._sheet = null;
     this._build();
-    // look: solid is opt-in; anything else keeps the glass look untouched.
+    // look: solid is opt-in (card config or theme variable --lg-look);
+    // anything else keeps the glass look untouched.
+    this._look = this._effectiveLook();
     this._cardEl.classList.toggle("solid", this._isSolid());
     this._applyLayout();
     this._render();
@@ -401,7 +416,29 @@ class BringGlassCard extends HTMLElement {
   }
 
   _isSolid() {
-    return this._config?.look === "solid";
+    return this._look === "solid";
+  }
+
+  _configLook() {
+    const look = this._config?.look;
+    return look === "solid" || look === "glass" ? look : "";
+  }
+
+  _effectiveLook() {
+    return this._configLook() || themeLook(this) || "glass";
+  }
+
+  // Re-read --lg-look (only when the card config has no `look`). If the
+  // effective look changed, update like a fresh setConfig with the same config
+  // would (class, layout variables, tiles without glows), keeping state.
+  _checkLook() {
+    if (!this._config || !this._cardEl || this._configLook()) return;
+    const look = this._effectiveLook();
+    if (look === this._look) return;
+    this._look = look;
+    this._cardEl.classList.toggle("solid", this._isSolid());
+    this._applyLayout();
+    this._render();
   }
 
   _loadCollapsed() {
@@ -447,18 +484,37 @@ class BringGlassCard extends HTMLElement {
       .join("|");
     const changed = sig !== this._sig;
     if (changed) this._sig = sig;
-    if (first) this._render();
+    // Theme switched (or dark mode toggled): re-read --lg-look. Not on every tick.
+    const th = hass.themes;
+    if (th !== this._themesRef || th?.theme !== this._themeName || th?.darkMode !== this._themeDark) {
+      this._themesRef = th;
+      this._themeName = th?.theme;
+      this._themeDark = th?.darkMode;
+      if (!first) this._checkLook();
+    }
+    if (first) {
+      this._checkLook();
+      this._render();
+    }
     if (changed) this._fetchAll();
   }
 
   connectedCallback() {
     clearInterval(this._poll);
     this._poll = setInterval(() => this._fetchAll(), 1000 * (this._config?.refresh_seconds || 120));
+    if (!this._onThemeChanged) this._onThemeChanged = () => this._checkLook();
+    window.addEventListener("lg-theme-changed", this._onThemeChanged);
+    this._checkLook();
+    // The theme may only apply after the card is attached.
+    cancelAnimationFrame(this._lookFrame);
+    this._lookFrame = requestAnimationFrame(() => this._checkLook());
   }
 
   disconnectedCallback() {
     clearInterval(this._poll);
     clearTimeout(this._pressTimer);
+    cancelAnimationFrame(this._lookFrame);
+    if (this._onThemeChanged) window.removeEventListener("lg-theme-changed", this._onThemeChanged);
   }
 
   getCardSize() {
