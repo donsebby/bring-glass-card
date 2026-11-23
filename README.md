@@ -74,6 +74,7 @@ lists:
 | `tile_radius` | number | `18` | Tile corner radius in px. |
 | `tinted` | bool | `true` | Colored icons. `false` renders them in the theme's text color. |
 | `glow` | bool | `true` | Tiles glow in the item color. |
+| `look` | string | — (glass) | `solid` switches to calm, solid surfaces without blur or glows, see *Solid look*. Without it the card keeps the glass look. |
 | `show_done` | bool | `true` | Show the "recently done" section. |
 | `done_expanded` | bool | `false` | Start with that section expanded. |
 | `hide_add` | bool | `false` | Hide the add/search bar. |
@@ -153,6 +154,25 @@ Matching runs against a normalized name: lower case, `ß` folded to `ss`, diacri
 - Items are compared by name, not by id, when deduplicating on add. `Cola` and `Cola Zero` are correctly treated as different items.
 - The tile grid uses `align-items: start` on purpose — with `stretch`, WebKit derives the tile width from the stretched row height and the grid stops short of the right edge.
 
+## Solid look
+
+`look: solid` swaps the frosted glass for quiet, solid surfaces — for dashboards that draw their own background (e.g. an animated sky) behind the cards. Lists, categories, tabs, the add field and the long-press sheet work exactly as before; only the styling changes:
+
+- **Card panel:** solid `--surface` (default: the theme's card colour at 88 %), a hairline border, radius `--lg-radius` (20 px), 16 px padding, no blur and no shadow. `frame: false` still removes the panel.
+- **Tiles:** solid `--lg-tile-bg` (default: a faint mix of the text colour), radius `--lg-radius` − 4 px (an explicit `tile_radius` still wins), no glows (whatever `glow` says). The icon sits in a 36 px circle tinted with the item colour; checked-off items are neutral and dimmed.
+- **Tabs, `+`, sheet buttons:** round pills, at least 44 px tall; the active tab is a solid pill, and on narrow cards the tabs move below the title. The add field and quantity field are solid, 44 px tall. Quantity and category chips are solid, the chosen category is tinted with the item colour.
+- **Text:** title 15 px, item names 15 px (13 px in `kompakt`), secondary text 13 px, counters with tabular numbers.
+- `bg_opacity` has no effect in this look. Transitions are switched off for `prefers-reduced-motion`.
+
+The card only reads these optional CSS variables, it never sets them: `--surface`, `--lg-tile-bg`, `--lg-radius`, `--primary-text-color`, `--secondary-text-color`.
+
+```yaml
+type: custom:bring-glass-card
+look: solid
+lists:
+  - entity: todo.shopping_list
+```
+
 ## Theme variables
 
 Like the other Liquid Glass cards, this card reads two optional CSS variables, so one theme can align all of them:
@@ -166,6 +186,9 @@ lg-backdrop: blur(22px) saturate(180%)   # blur/saturation behind the panel
 Without them nothing changes. Options set on the card itself (e.g. `blur`) still win.
 
 ## Changelog
+
+### 1.3.0
+- New option `look: solid`: calm, solid surfaces instead of glass — no blur, gradients or glows, solid tiles with the item colour in a round icon, pill buttons and 44 px tap targets (see *Solid look*). Without the option the card looks exactly as before.
 
 ### 1.2.0
 - Reads the optional theme variables `--lg-radius` and `--lg-backdrop` (see *Theme variables*).

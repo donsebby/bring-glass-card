@@ -12,7 +12,7 @@
  * MIT licensed.
  */
 
-const CARD_VERSION = "1.2.0";
+const CARD_VERSION = "1.3.0";
 const DEFAULT_OVERRIDES_ENTITY = "todo.bring_glass_card_kategorien";
 const COLLAPSE_KEY_PREFIX = "bgc-collapsed:";
 
@@ -218,9 +218,9 @@ const GROUP_NAMES_EN = {
 };
 
 const LAYOUTS = {
-  kacheln: { col: "122px", gap: "12px", dir: "column", pad: "15px 10px", minH: "134px", box: "68px", glyph: "36px", name: "13.5px", qty: "11.5px", ta: "center", text: "24px" },
-  kompakt: { col: "94px", gap: "8px", dir: "column", pad: "11px 6px", minH: "108px", box: "52px", glyph: "28px", name: "11.5px", qty: "10.5px", ta: "center", text: "32px" },
-  zeilen: { col: "236px", gap: "8px", dir: "row", pad: "11px 12px", minH: "0px", box: "48px", glyph: "26px", name: "13px", qty: "11.5px", ta: "left", text: "auto" },
+  kacheln: { col: "122px", gap: "12px", dir: "column", pad: "15px 10px", minH: "134px", box: "68px", glyph: "36px", name: "13.5px", qty: "11.5px", ta: "center", text: "24px", sName: "15px", sQty: "13px" },
+  kompakt: { col: "94px", gap: "8px", dir: "column", pad: "11px 6px", minH: "108px", box: "52px", glyph: "28px", name: "11.5px", qty: "10.5px", ta: "center", text: "32px", sName: "13px", sQty: "12px" },
+  zeilen: { col: "236px", gap: "8px", dir: "row", pad: "11px 12px", minH: "0px", box: "48px", glyph: "26px", name: "13px", qty: "11.5px", ta: "left", text: "auto", sName: "15px", sQty: "13px" },
 };
 
 const STYLE = `
@@ -292,6 +292,74 @@ const STYLE = `
 .catname{font-size:12px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--txt2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .catcount{font-size:11px;font-weight:600;padding:1px 7px;border-radius:999px;background:var(--l13);color:var(--txt2);flex:none}
 .catchev{opacity:.5}
+/* look: solid - calm solid surfaces instead of glass (opt-in, the glass rules
+   above stay untouched). No backdrop blur, gradients, glows or big shadows.
+   Item colours only tint the icon circle (category hint), done items are
+   neutral. The edit sheet lives in .veil-host next to .card, hence the
+   ".card.solid + .veil-host" selectors. Kept last so these rules win. */
+:host{--s-tile:var(--lg-tile-bg,color-mix(in srgb,var(--ink) 8%,transparent));--s-r:calc(var(--lg-radius,20px) - 4px)}
+.card.solid{background:var(--surface,color-mix(in srgb,var(--card-background-color,#1c1f28) 88%,transparent));backdrop-filter:none;-webkit-backdrop-filter:none;border:1px solid rgba(255,255,255,0.06);border-radius:var(--lg-radius,20px);padding:16px;box-shadow:none}
+.card.solid.bare{background:none;border:none;border-radius:0;padding:0}
+.card.solid .title{font-size:15px;font-weight:600}
+.card.solid .count{font-size:13px;font-weight:500;font-variant-numeric:tabular-nums}
+.card.solid .sub{font-size:13px}
+/* the 44px pill tabs are wider than the glass ones: on narrow cards they wrap
+   below the title instead of squeezing it */
+.card.solid .head{flex-wrap:wrap}
+.card.solid .head-l{min-width:min(140px,100%)}
+.card.solid .tabs{align-items:center}
+.card.solid .tab{box-sizing:border-box;min-height:44px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:500;transition:background .2s ease,color .2s ease}
+.card.solid .tab ha-icon{--mdc-icon-size:18px}
+.card.solid .tab.on{color:var(--txt);background:color-mix(in srgb,var(--ink) 14%,transparent);box-shadow:none}
+.card.solid .addbar{align-items:center}
+.card.solid .addfield{box-sizing:border-box;min-height:44px;border-radius:14px;background:color-mix(in srgb,var(--ink) 8%,transparent);border:1px solid rgba(255,255,255,0.08)}
+.card.solid .addfield ha-icon{opacity:1;color:var(--txt2)}
+.card.solid .addfield input{font-size:15px}
+.card.solid .addbtn{flex:none;width:44px;height:44px;border-radius:999px;border:none;color:var(--txt);background:color-mix(in srgb,var(--ink) 14%,transparent);box-shadow:none;transition:background .2s ease}
+/* min-height:0 - with the 36px icon circle the content fits a square tile; the
+   layout's min-height would (via aspect-ratio) widen tiles past their column. */
+.card.solid .tile{min-height:0;background:var(--s-tile);border:1px solid rgba(255,255,255,0.04);border-radius:var(--s-tile-r,var(--s-r));box-shadow:none;transition:transform .12s ease,background .2s ease,opacity .2s ease}
+.card.solid .box{width:36px;height:36px;border-radius:50%;background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--txt);filter:none;transition:background .2s ease,color .2s ease}
+.card.solid .box ha-icon{--mdc-icon-size:20px}
+.card.solid .box.tinted{background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--c);filter:none}
+.card.solid .name{font-size:var(--s-name,15px);font-weight:600}
+.card.solid .qty{font-size:var(--s-qty,13px);font-variant-numeric:tabular-nums}
+.card.solid .tile.done{background:var(--s-tile);border:1px solid rgba(255,255,255,0.04);box-shadow:none;opacity:.6}
+.card.solid .tile.done .box{filter:none;opacity:1;color:var(--txt2)}
+.card.solid .tile.done .qty{opacity:1}
+.card.solid .empty-box{width:56px;height:56px;border-radius:50%;border:none;color:var(--txt2);background:color-mix(in srgb,var(--ink) 10%,transparent);box-shadow:none}
+.card.solid .empty-box ha-icon{--mdc-icon-size:28px}
+.card.solid .empty-t{font-size:15px;font-weight:600}
+.card.solid .empty-s{font-size:13px}
+.card.solid .donesec{border-top-color:rgba(255,255,255,0.06)}
+.card.solid .donehead,.card.solid .cathead{position:relative}
+.card.solid .donehead{font-size:13px}
+.card.solid .donehead::before{content:"";position:absolute;left:0;right:0;top:-12px;bottom:-14px}
+.card.solid .donegrid{margin-top:14px}
+.card.solid .donehead .pill,.card.solid .catcount{font-size:13px;font-weight:500;padding:1px 8px;font-variant-numeric:tabular-nums}
+.card.solid .cathead::before{content:"";position:absolute;left:0;right:0;top:-16px;bottom:-10px}
+.card.solid .cathead ha-icon{opacity:1;color:var(--txt2)}
+.card.solid .catname{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none}
+.card.solid .hint{font-size:13px;opacity:1}
+.card.solid + .veil-host .veil{background:rgba(8,9,14,0.72);backdrop-filter:none;-webkit-backdrop-filter:none}
+.card.solid + .veil-host .sheet{max-height:calc(100vh - 40px);overflow-y:auto;border-radius:var(--lg-radius,20px);background:var(--surface,color-mix(in srgb,var(--card-background-color,#1c1f28) 88%,transparent));border:1px solid rgba(255,255,255,0.06);box-shadow:none}
+.card.solid + .veil-host .box{width:48px;height:48px;border-radius:50%;background:color-mix(in srgb,var(--ink) 10%,transparent);color:var(--txt);filter:none}
+.card.solid + .veil-host .box ha-icon{--mdc-icon-size:24px}
+.card.solid + .veil-host .box.tinted{background:color-mix(in srgb,var(--c) 20%,transparent);color:var(--c);filter:none}
+.card.solid + .veil-host .sheet-name{font-size:15px;font-weight:600}
+.card.solid + .veil-host .sheet-sub{font-size:13px}
+.card.solid + .veil-host .label{font-size:13px;font-weight:600;letter-spacing:0;text-transform:none;opacity:1;color:var(--txt2)}
+.card.solid + .veil-host .sheet input{min-height:44px;font-size:15px;border-radius:14px;background:color-mix(in srgb,var(--ink) 8%,transparent);border:1px solid rgba(255,255,255,0.08)}
+.card.solid + .veil-host .chip{box-sizing:border-box;display:flex;align-items:center;min-height:44px;padding:0 14px;font-size:15px;color:var(--txt);background:var(--s-tile);border:1px solid rgba(255,255,255,0.04);border-radius:var(--s-r);transition:background .2s ease}
+.card.solid + .veil-host .chip.active{background:color-mix(in srgb,var(--c,var(--ink)) 20%,var(--s-tile));border-color:rgba(255,255,255,0.04);box-shadow:none}
+.card.solid + .veil-host .sheet-actions{align-items:center}
+.card.solid + .veil-host .btn-del,.card.solid + .veil-host .btn-ok{box-sizing:border-box;min-height:44px;padding:0 18px;border-radius:999px;border:none;box-shadow:none;font-size:15px;font-weight:500;background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.card.solid + .veil-host .btn-ok{color:var(--txt)}
+@media (prefers-reduced-motion: reduce){
+.card.solid .tile,.card.solid .tab,.card.solid .box,.card.solid .addbtn,.card.solid + .veil-host .chip{transition:none}
+.card.solid .tile:active{transform:none}
+.card.solid .empty.loading{animation:none}
+}
 `;
 
 const esc = (e) =>
@@ -325,9 +393,15 @@ class BringGlassCard extends HTMLElement {
     this._overrides = {};
     this._sheet = null;
     this._build();
+    // look: solid is opt-in; anything else keeps the glass look untouched.
+    this._cardEl.classList.toggle("solid", this._isSolid());
     this._applyLayout();
     this._render();
     this._fetchAll();
+  }
+
+  _isSolid() {
+    return this._config?.look === "solid";
   }
 
   _loadCollapsed() {
@@ -619,6 +693,16 @@ class BringGlassCard extends HTMLElement {
     style.setProperty("--text-flex", layout.dir === "row" ? "1" : "0 1 auto");
     style.setProperty("--ratio", layout.dir === "row" ? "auto" : "1 / 1");
     style.setProperty("--tile-radius", (config.tile_radius != null ? config.tile_radius : 18) + "px");
+    // look: solid - layout-specific text sizes and an explicit tile_radius;
+    // only set in solid mode so the glass card's inline style stays as before.
+    if (this._isSolid()) {
+      style.setProperty("--s-name", layout.sName);
+      style.setProperty("--s-qty", layout.sQty);
+      if (config.tile_radius != null) style.setProperty("--s-tile-r", config.tile_radius + "px");
+      else style.removeProperty("--s-tile-r");
+    } else {
+      ["--s-name", "--s-qty", "--s-tile-r"].forEach((p) => style.removeProperty(p));
+    }
     this._cardEl.classList.toggle("bare", config.frame === false);
     if (config.bg_opacity != null) this._cardEl.style.setProperty("--bg-pct", Math.max(0, Math.min(100, 100 * config.bg_opacity)) + "%");
     else this._cardEl.style.removeProperty("--bg-pct");
@@ -627,7 +711,8 @@ class BringGlassCard extends HTMLElement {
   _tileHtml(item, done) {
     const meta = this._meta(item);
     const tinted = this._config.tinted !== false && !done;
-    const glow = this._config.glow !== false && !done;
+    // The solid look has no glows, whatever `glow` says.
+    const glow = this._config.glow !== false && !done && !this._isSolid();
     const desc = (item.description || "").trim();
     return `
       <div class="tile${done ? " done" : ""}${glow ? " glow" : ""}" data-uid="${esc(item.uid)}" data-done="${done ? 1 : 0}" style="--c:${meta.color}">
@@ -764,9 +849,11 @@ class BringGlassCard extends HTMLElement {
     const tinted = this._config.tinted !== false;
     const chips = this._config.qty_chips || (this._de() ? DEFAULT_CHIPS_DE : DEFAULT_CHIPS_EN);
     const listName = this._list().name || this._entity();
+    // look: solid - the selected category chip is tinted with the item colour.
+    const sheetStyle = this._isSolid() && tinted ? ` style="--c:${meta.color}"` : "";
     this._veilHost.innerHTML = `
       <div class="veil">
-        <div class="sheet">
+        <div class="sheet"${sheetStyle}>
           <div class="sheet-head">
             <div class="box sheet-box${tinted ? " tinted" : ""}" style="--c:${meta.color}"><ha-icon icon="${esc(meta.icon)}"></ha-icon></div>
             <div style="min-width:0">
