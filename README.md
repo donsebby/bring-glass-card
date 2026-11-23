@@ -153,9 +153,22 @@ Matching runs against a normalized name: lower case, `ß` folded to `ss`, diacri
 - Items are compared by name, not by id, when deduplicating on add. `Cola` and `Cola Zero` are correctly treated as different items.
 - The tile grid uses `align-items: start` on purpose — with `stretch`, WebKit derives the tile width from the stretched row height and the grid stops short of the right edge.
 
+## Theme variables
+
+Like the other Liquid Glass cards, this card reads two optional CSS variables, so one theme can align all of them:
+
+```yaml
+# in your Home Assistant theme
+lg-radius: 22px                          # corner radius of the glass panel
+lg-backdrop: blur(22px) saturate(180%)   # blur/saturation behind the panel
+```
+
+Without them nothing changes. Options set on the card itself (e.g. `blur`) still win.
+
 ## Changelog
 
 ### 1.2.0
+- Reads the optional theme variables `--lg-radius` and `--lg-backdrop` (see *Theme variables*).
 - Fixed: since 1.1.0 the card showed no texts (title, counter, hint, sheet labels), no quick-pick chips and no glass background unless every label was configured by hand. Built-in texts, chips and the card frame are back.
 - German and English texts built in, following the Home Assistant language (`labels:` still overrides). Category names are translated too.
 - Documents the category features from 1.1.0: `group_by_category`, `overrides_entity`, `default_group`.

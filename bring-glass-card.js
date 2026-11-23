@@ -225,7 +225,7 @@ const LAYOUTS = {
 
 const STYLE = `
 :host{display:block;font-family:var(--paper-font-body1_-_font-family,Roboto,Helvetica,Arial,sans-serif);--ink:var(--primary-text-color,#fff);--txt:var(--primary-text-color,rgba(255,255,255,0.95));--txt2:var(--secondary-text-color,rgba(255,255,255,0.55));--l7:color-mix(in srgb,var(--ink) 7%,transparent);--l12:color-mix(in srgb,var(--ink) 12%,transparent);--l13:color-mix(in srgb,var(--ink) 13%,transparent);--l26:color-mix(in srgb,var(--ink) 26%,rgba(255,255,255,0.5));--gbg:linear-gradient(155deg,rgba(255,255,255,0.5) 0%,rgba(255,255,255,0.22) 45%,rgba(255,255,255,0.4) 100%);--gsh:inset 0 1px 1px rgba(255,255,255,0.28),inset 2px 0 4px rgba(80,200,255,0.28),inset -2px 0 4px rgba(255,90,190,0.25)}
-.card{box-sizing:border-box;background:color-mix(in oklch,var(--card-background-color,#17181f) var(--bg-pct,70%),transparent);backdrop-filter:blur(22px) saturate(180%);-webkit-backdrop-filter:blur(22px) saturate(180%);border:1px solid var(--l12);border-radius:22px;padding:18px;box-shadow:0 20px 40px -20px rgba(0,0,0,0.35),inset 0 1px 0 var(--l12)}
+.card{box-sizing:border-box;background:color-mix(in oklch,var(--card-background-color,#17181f) var(--bg-pct,70%),transparent);backdrop-filter:var(--lg-backdrop,blur(22px) saturate(180%));-webkit-backdrop-filter:var(--lg-backdrop,blur(22px) saturate(180%));border:1px solid var(--l12);border-radius:var(--lg-radius,22px);padding:18px;box-shadow:0 20px 40px -20px rgba(0,0,0,0.35),inset 0 1px 0 var(--l12)}
 .card.bare{background:none;backdrop-filter:none;-webkit-backdrop-filter:none;border:none;border-radius:0;padding:0;box-shadow:none}
 .head{display:flex;align-items:flex-start;gap:12px;margin-bottom:14px}
 .head-l{flex:1 1 auto;min-width:0}
