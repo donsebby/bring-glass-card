@@ -74,7 +74,7 @@ lists:
 | `tile_radius` | number | `18` | Tile corner radius in px. |
 | `tinted` | bool | `true` | Colored icons. `false` renders them in the theme's text color. |
 | `glow` | bool | `true` | Tiles glow in the item color. |
-| `look` | string | — (glass) | `solid` switches to calm, solid surfaces without blur or glows, see *Solid look*. Without it the card keeps the glass look. |
+| `look` | string | — (theme, else glass) | `solid` switches to calm, solid surfaces without blur or glows, `glass` forces the glass look, see *Solid look*. Without it the card follows the theme variable `lg-look` and otherwise keeps the glass look. |
 | `show_done` | bool | `true` | Show the "recently done" section. |
 | `done_expanded` | bool | `false` | Start with that section expanded. |
 | `hide_add` | bool | `false` | Hide the add/search bar. |
@@ -166,6 +166,13 @@ Matching runs against a normalized name: lower case, `ß` folded to `ss`, diacri
 
 The card only reads these optional CSS variables, it never sets them: `--surface`, `--lg-tile-bg`, `--lg-radius`, `--primary-text-color`, `--secondary-text-color`.
 
+The look can also come from the theme, for all Liquid Glass cards at once: set `lg-look: solid` (or `glass`) in your Home Assistant theme. A `look:` on a single card overrides the theme. The card re-reads the variable when it is attached, when the Home Assistant theme or dark mode changes, and on the window event `lg-theme-changed` (for pages that switch the variable themselves).
+
+```yaml
+# in your Home Assistant theme
+lg-look: solid
+```
+
 ```yaml
 type: custom:bring-glass-card
 look: solid
@@ -175,12 +182,13 @@ lists:
 
 ## Theme variables
 
-Like the other Liquid Glass cards, this card reads two optional CSS variables, so one theme can align all of them:
+Like the other Liquid Glass cards, this card reads optional CSS variables, so one theme can align all of them:
 
 ```yaml
 # in your Home Assistant theme
 lg-radius: 22px                          # corner radius of the glass panel
 lg-backdrop: blur(22px) saturate(180%)   # blur/saturation behind the panel
+lg-look: solid                           # solid or glass for all cards (see Solid look)
 ```
 
 Without them nothing changes. Options set on the card itself (e.g. `blur`) still win.
@@ -189,6 +197,7 @@ Without them nothing changes. Options set on the card itself (e.g. `blur`) still
 
 ### 1.3.0
 - New option `look: solid`: calm, solid surfaces instead of glass — no blur, gradients or glows, solid tiles with the item colour in a round icon, pill buttons and 44 px tap targets (see *Solid look*). Without the option the card looks exactly as before.
+- The look can come from the theme: `lg-look: solid` in the theme switches all cards without `look:`; `look: glass` or `look: solid` on a card overrides it (see *Solid look*).
 
 ### 1.2.0
 - Reads the optional theme variables `--lg-radius` and `--lg-backdrop` (see *Theme variables*).
